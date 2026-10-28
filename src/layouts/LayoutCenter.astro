@@ -1,0 +1,184 @@
+---
+import "@/base/styles/global.css";
+import { siteConfig, type Theme } from "@/base/site";
+
+interface Props {
+    title?: string;
+    description?: string;
+    theme?: Theme;
+}
+
+const { title, description, theme: propTheme } = Astro.props;
+
+// 1. 메타데이터 설정
+const pageTitle = title ? `${title} | ${siteConfig.brand}` : siteConfig.brand;
+const ogTitle = title || siteConfig.brand;
+const finalDescription = description || siteConfig.description;
+
+// 2. Canonical 및 OG URL 경로 생성
+const origin = Astro.site?.origin ?? Astro.url.origin;
+const rawPathname = Astro.url.pathname;
+const canonicalUrl = new URL(rawPathname, origin).href;
+const ogImage = new URL(siteConfig.defaultImage, origin).href;
+
+// 3. 경로별 테마 오버라이드 지정 (로그인: dog, 회원가입: cat)
+let overrideTheme: Theme | null = propTheme || null;
+
+if (!overrideTheme) {
+    if (rawPathname.includes("signup")) {
+        overrideTheme = "cat";
+    } else if (rawPathname.includes("login")) {
+        overrideTheme = "dog";
+    }
+}
+
+const {
+    cookieKey,
+    storageKey,
+    defaultTheme,
+    attribute = "data-theme",
+    metaColor
+} = siteConfig.theme;
+
+const savedThemeCookie = Astro.cookies.get(cookieKey)?.value as
+    Theme | undefined;
+const initialTheme: Theme = overrideTheme || savedThemeCookie || defaultTheme;
+const currentMetaColor = metaColor[initialTheme] || metaColor[defaultTheme];
+
+// 4. 클라이언트 전달용 스크립트 데이터 (오버라이드 테마 전달)
+const themeConfigJson = JSON.stringify({
+    overrideTheme,
+    cookieKey,
+    storageKey,
+    defaultTheme,
+    attribute,
+    metaColor
+});
+---
+
+<!doctype html>
+<html lang="ko" data-theme={initialTheme}>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content={Astro.generator} />
+        <meta
+            name="theme-color"
+            content={currentMetaColor}
+            id="theme-color-meta"
+        />
+
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+
+        <!-- Pretendard Dynamic Subset -->
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+        <link
+            rel="stylesheet"
+            crossorigin
+            href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css"
+        />
+
+        <link rel="canonical" href={canonicalUrl} />
+        <title>{pageTitle}</title>
+        <meta name="description" content={finalDescription} />
+
+        <!-- 로그인/회원가입 등 센터 레이아웃 페이지는 검색 노출 제외 -->
+        <meta name="robots" content="noindex, nofollow" />
+
+        <!-- 오픈 그래프 (OG) & 트위터 메타 태그 -->
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content={siteConfig.brand} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={ogTitle} />
+        <meta property="og:description" content={finalDescription} />
+        <meta property="og:image" content={ogImage} />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={ogTitle} />
+        <meta name="twitter:description" content={finalDescription} />
+        <meta name="twitter:image" content={ogImage} />
+
+        <!-- 클라이언트 테마 동기화 스크립트 -->
+        <script is:inline define:vars={{ themeConfigRaw: themeConfigJson }}>
+            (function () {
+                try {
+                    const {
+                        overrideTheme,
+                        cookieKey,
+                        storageKey,
+                        defaultTheme,
+                        attribute,
+                        metaColor
+                    } = JSON.parse(themeConfigRaw);
+
+                    // 1. 강제 지정된 오버라이드 테마가 있을 경우 Storage/Cookie 변경 없이 DOM만 세팅
+                    if (overrideTheme) {
+                        document.documentElement.setAttribute(
+                            attribute,
+                            overrideTheme
+                        );
+                        const metaTag =
+                            document.getElementById("theme-color-meta");
+                        if (metaTag && metaColor && metaColor[overrideTheme]) {
+                            metaTag.setAttribute(
+                                "content",
+                                metaColor[overrideTheme]
+                            );
+                        }
+                        return;
+                    }
+
+                    // 2. 일반 흐름: 쿠키/스토리지 동기화
+                    const cookieMatch = document.cookie.match(
+                        new RegExp("(?:^|; )" + cookieKey + "=([^;]*)")
+                    );
+                    const cookieTheme = cookieMatch ? cookieMatch[1] : null;
+                    const storageTheme = localStorage.getItem(storageKey);
+
+                    const currentTheme =
+                        cookieTheme || storageTheme || defaultTheme;
+
+                    document.documentElement.setAttribute(
+                        attribute,
+                        currentTheme
+                    );
+
+                    const metaTag = document.getElementById("theme-color-meta");
+                    if (metaTag && metaColor && metaColor[currentTheme]) {
+                        metaTag.setAttribute(
+                            "content",
+                            metaColor[currentTheme]
+                        );
+                    }
+                } catch (e) {
+                    // 예외 처리
+                }
+            })();
+        </script>
+    </head>
+    <body>
+        <main class="center-container">
+            <slot />
+        </main>
+    </body>
+</html>
+
+<style>
+    html,
+    body {
+        width: 100%;
+        min-height: 100dvh;
+        margin: 0;
+        padding: 0;
+    }
+
+    .center-container {
+        width: 100%;
+        min-height: 100dvh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1.5rem;
+    }
+</style>

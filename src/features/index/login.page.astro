@@ -1,0 +1,405 @@
+---
+import CustomAlert from "@/components/alert/CustomAlert.astro";
+
+const title = "로그인";
+---
+
+<div class="auth-card" data-theme="dog">
+    <CustomAlert />
+
+    <div class="forms-container">
+        <section class="panel">
+            <h1 class="panel-title">안녕하세요!</h1>
+            <p class="panel-desc">아직 계정이 없으신가요?</p>
+            <a href="/register" class="panel-btn-link">
+                회원가입
+            </a>
+        </section>
+
+        <form id="loginForm" class="form-box" novalidate>
+            <!--
+                ovalidate: 브라우저의 기본 폼 검증 UI를 비활성화합니다. 
+                따라서 이 코드에서는 Zod 검증을 직접 실행합니다.
+                required가 붙어 있어도 novalidate 때문에 브라우저의 기본 필수 
+                입력 검증에 의존하지 않습니다.
+            -->
+            <h2 class="form-title">{title}</h2>
+
+            <div class="input-group">
+                <label class="sr-only" for="login-email">
+                    이메일
+                </label>
+                <input
+                    id="login-email"
+                    type="email"
+                    name="email"
+                    placeholder="이메일"
+                    class="auth-input"
+                    autocomplete="email"
+                    required
+                />
+            </div>
+
+            <div class="input-group">
+                <label class="sr-only" for="login-password">
+                    비밀번호
+                </label>
+                <input
+                    id="login-password"
+                    type="password"
+                    name="password"
+                    placeholder="비밀번호"
+                    class="auth-input"
+                    autocomplete="current-password"
+                    required
+                />
+            </div>
+
+            <button type="submit" class="auth-submit-btn">
+                로그인
+            </button>
+
+            <div class="sns-container">
+                <p class="sns-title">또는 SNS 계정으로 시작하기</p>
+                <div class="sns-buttons">
+                    <a href="/api/auth/oauth/google" class="sns-btn google-btn">
+                        Google로 계속하기
+                    </a>
+                    <a href="/api/auth/oauth/kakao" class="sns-btn kakao-btn">
+                        카카오 로그인
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .auth-card {
+        width: min(850px, 100%);
+        min-height: 550px;
+        margin: auto;
+        overflow: hidden;
+        border: 1px solid var(--color-border);
+        border-radius: 1.5rem;
+        color: var(--color-base-content);
+        background: var(--color-base-100);
+        box-shadow: var(--custom-shadow);
+    }
+
+    .forms-container {
+        display: flex;
+        min-height: 550px;
+    }
+
+    .panel,
+    .form-box {
+        display: flex;
+        width: 50%;
+        box-sizing: border-box;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2.5rem;
+        text-align: center;
+    }
+
+    .panel {
+        color: var(--color-primary-content);
+        background: var(--color-primary);
+    }
+
+    .panel-title {
+        margin-bottom: 0.5rem;
+        font-size: 2rem;
+        font-weight: 700;
+    }
+
+    .panel-desc {
+        margin-bottom: 1.5rem;
+    }
+
+    .panel-btn-link,
+    .sns-btn {
+        display: inline-flex;
+        min-height: 2.75rem;
+        align-items: center;
+        justify-content: center;
+        padding: 0.6rem 1rem;
+        border: 1px solid currentColor;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .panel-btn-link {
+        color: inherit;
+    }
+
+    .form-title {
+        margin-bottom: 1.5rem;
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+
+    .input-group,
+    .auth-input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .input-group {
+        margin: 0.5rem 0;
+    }
+
+    .auth-input {
+        min-height: 3rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--color-border);
+        border-radius: 0.5rem;
+        color: var(--color-base-content);
+        background: var(--color-base-input);
+        font: inherit;
+    }
+
+    .auth-input:focus-visible,
+    .auth-submit-btn:focus-visible,
+    .sns-btn:focus-visible,
+    .panel-btn-link:focus-visible {
+        outline: 3px solid var(--color-primary);
+        outline-offset: 3px;
+    }
+
+    .auth-submit-btn {
+        width: 100%;
+        min-height: 3rem;
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--color-primary);
+        border-radius: 0.5rem;
+        color: var(--color-primary-content);
+        background: var(--color-primary);
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .auth-submit-btn:hover:not(:disabled) {
+        background: var(--color-primary-hover);
+    }
+
+    .auth-submit-btn:disabled {
+        cursor: wait;
+        opacity: 0.65;
+    }
+
+    .sns-container {
+        display: flex;
+        width: 100%;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+    }
+
+    .sns-title {
+        margin: 0;
+        font-size: 0.8rem;
+        opacity: 0.7;
+    }
+
+    .sns-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .sns-btn {
+        flex: 1;
+        font-size: 0.8rem;
+    }
+
+    .google-btn {
+        color: #1f2937;
+        background: #fff;
+        border-color: #e5e7eb;
+    }
+
+    .kakao-btn {
+        color: #191919;
+        background: #fee500;
+        border-color: #fee500;
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        clip-path: inset(50%);
+    }
+
+    @media (max-width: 640px) {
+        .auth-card {
+            min-height: auto;
+            border-radius: 1rem;
+        }
+
+        .forms-container {
+            flex-direction: column;
+        }
+
+        .panel,
+        .form-box {
+            width: 100%;
+            padding: 2rem 1.25rem;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+        }
+
+        .sns-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<script>
+    import { z } from "zod";
+    import { showAlert } from "@/lib/alert";
+    import { navigate } from "astro:transitions/client"; // Astro의 페이지 전환 기능
+
+    // 브라우저에서 로그인 요청 데이터를 검사합니다.
+    const loginInputSchema = z.object({
+        email: z
+            .string()
+            .trim()
+            .min(1, "이메일을 입력해주세요.")
+            .email("유효한 이메일 형식이 아닙니다."),
+        password: z
+            .string()
+            .min(1, "비밀번호를 입력해주세요.")
+            .min(8, "비밀번호는 8자 이상이어야 합니다.")
+            .max(128, "비밀번호가 너무 깁니다.") // VARCHAR(60)
+    });
+
+    const loginResponseSchema = z.object({
+        // API 응답구조
+        // 서버에서 받아올 것으로 기대하는 JSON의 구조
+        success: z.boolean(),
+        user: z
+            .object({
+                id: z.string().optional(),
+                email: z.string().optional(),
+                username: z.string().optional()
+            })
+            .nullable()
+            .optional(),
+        error: z.string().optional()
+    });
+
+    async function readJsonSafely(response: Response): Promise<unknown> {
+        try {
+            return await response.json();
+        } catch {
+            return null;
+        }
+    }
+
+    function initLoginProcess(): void {
+        const form = document.querySelector<HTMLFormElement>("#loginForm");
+
+        // View Transitions로 페이지가 다시 표시될 때 중복 등록 방지
+        if (!form || form.dataset.loginInitialized === "true") return;
+        form.dataset.loginInitialized = "true";
+
+        const submitButton = form.querySelector<HTMLButtonElement>(
+            'button[type="submit"]'
+        );
+
+        let isSubmitting = false;
+
+        form.addEventListener("submit", async (event: SubmitEvent) => {
+            event.preventDefault();
+
+            if (isSubmitting) return;
+
+            const formData = new FormData(form);
+            const validation = loginInputSchema.safeParse({
+                email: formData.get("email"),
+                password: formData.get("password")
+            });
+
+            if (!validation.success) {
+                const issue = validation.error.issues[0];
+                showAlert(issue.message, "warning");
+
+                const field = issue.path[0];
+                if (typeof field === "string") {
+                    form.querySelector<HTMLInputElement>(
+                        `[name="${field}"]`
+                    )?.focus();
+                }
+                return;
+            }
+
+            isSubmitting = true;
+            if (submitButton) submitButton.disabled = true;
+            form.setAttribute("aria-busy", "true");
+
+            try {
+                // 중요: 브라우저는 Hono가 아니라 Astro API만 호출합니다.
+                const response = await fetch("/api/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json"
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify(validation.data)
+                });
+
+                const rawBody = await readJsonSafely(response);
+                const parsed = loginResponseSchema.safeParse(rawBody);
+
+                if (!response.ok || !parsed.success || !parsed.data.success) {
+                    const errorMessage =
+                        parsed.success && parsed.data.error
+                            ? parsed.data.error
+                            : "로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.";
+
+                    throw new Error(errorMessage);
+                }
+
+                const user = parsed.data.user;
+                const displayName =
+                    user?.username ||
+                    user?.email ||
+                    validation.data.email;
+                    
+                showAlert(`${displayName}님, 환영합니다!`, "success");
+
+                // 알림이 잠깐 보인 뒤 메인 페이지로 이동합니다.
+                window.setTimeout(() => {
+                    navigate("/");
+                }, 800);
+            } catch (error: unknown) {
+                const message =
+                    error instanceof Error
+                        ? error.message
+                        : "로그인 중 오류가 발생했습니다.";
+
+                showAlert(message, "error");
+            } finally {
+                isSubmitting = false;
+                if (submitButton) submitButton.disabled = false;
+                form.removeAttribute("aria-busy");
+            }
+        });
+    }
+
+    // 일반 페이지 로드 및 Astro View Transitions 모두 대응
+    document.addEventListener("astro:page-load", initLoginProcess);
+    initLoginProcess();
+</script>

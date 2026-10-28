@@ -1,0 +1,37 @@
+---
+interface Props {
+    id?: string;
+    icon?: string;
+    message?: string;
+}
+
+const {
+    id = "audio-guide-bubble",
+    icon = "📸",
+    message = "화면을 클릭하면<br />셔터 소리와 함께 시작됩니다!"
+} = Astro.props;
+---
+
+<div
+    id={id}
+    class="chat chat-bottom pointer-events-none fixed top-[40%] left-1/2 z-100000 -translate-x-1/2 -translate-y-1/2 animate-bounce opacity-100 transition-all duration-300"
+>
+    <div
+        class="chat-bubble bg-theme-main shadow-card-hover rounded-2xl border-none p-4 text-center font-bold text-white"
+    >
+        <span class="mb-1 block text-2xl">{icon}</span>
+        <p class="m-0 text-sm leading-relaxed" set:html={message} />
+    </div>
+</div>
+
+<style>
+    /* 사라질 때 효과용 클래스 */
+    :global(.guide-bubble-fade-out) {
+        opacity: 0 !important;
+        /* 왼쪽 위
+        transform: translate(-50%, -60%) scale(0.9) !important; */
+        /* 똑바로 위로 수직으로 떠오르며 사라짐 */
+        /* transform: translate(-50%, -80%) scale(0.9) !important; */
+        transform: translate(-50%, -30%) scale(0.9) !important;
+    }
+</style>

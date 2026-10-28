@@ -1,0 +1,67 @@
+---
+export const prerender = false;
+
+import Layout from "@/layouts/Layout.astro";
+import LayoutCenter from "@/layouts/LayoutCenter.astro";
+
+import IndexPage from "@/features/index/index.page.astro";
+import LoginPage from "@/features/index/login.page.astro";
+import RegisterPage from "@/features/index/register.page.astro";
+
+
+// ----------------------------------------------------------------
+// URL 파싱 및 세그먼트 추출
+// ----------------------------------------------------------------
+const { indexPath } = Astro.params;
+// const segments = pathIndex
+//     ? pathIndex.toLowerCase().split("/").filter(Boolean)
+//     : [];
+
+// 1. pathIndex가 undefined(루트 "/")라면 'home' 기본값 처리
+const currentPath = indexPath ?? "home";
+
+// 1. 경로 문자열과 컴포넌트, 레이아웃을를 짝지어두는 매핑 객체 생성
+const pageMap: Record<
+    string,
+    { component: any; layout: any; title: string; description: string }
+> = {
+    home: {
+        component: IndexPage,
+        layout: Layout,
+        title: "HOME 페이지 타이틀",
+        description: "HOME 페이지에 대한 설명입니다."
+    },
+    login: {
+        component: LoginPage,
+        layout: LayoutCenter,
+        title: "Login 페이지 타이틀",
+        description: "Login 페이지에 대한 설명입니다."
+    },
+    register: {
+        component: RegisterPage,
+        layout: LayoutCenter,
+        title: "Register 페이지 타이틀",
+        description: "Register 페이지에 대한 설명입니다."
+    }
+};
+
+// 2. 만약 매핑 객체에 없는 경로라면 바로 404 처리
+if (!pageMap[currentPath]) {
+    return Astro.rewrite("/404");
+}
+
+// 3. 현재 경로의 데이터 구조 분해 할당
+const {
+    component: ActivePage,
+    layout: ActiveLayout,
+    title,
+    description
+} = pageMap[currentPath];
+---
+
+
+<!-- 4. 레이아웃 컴포넌트에 title과 description을 Props로 전달 -->
+<ActiveLayout title={title} description={description}>
+    <ActivePage />
+</ActiveLayout>
+

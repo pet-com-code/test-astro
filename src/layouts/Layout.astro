@@ -1,0 +1,179 @@
+---
+import "@/base/styles/global.css";
+import { siteConfig, type Theme } from "@/base/site";
+
+interface Props {
+    title?: string;
+    description?: string;
+    ogImage?: string;
+    theme?: Theme;
+}
+
+const {
+    title,
+    description,
+    ogImage: propOgImage,
+    theme: propTheme
+} = Astro.props;
+
+// 1. 메타데이터 설정
+const pageTitle = title ? `${title} | ${siteConfig.brand}` : siteConfig.brand;
+const ogTitle = title || siteConfig.brand;
+const finalDescription = description || siteConfig.description;
+
+// 2. Canonical 및 OG URL 경로 생성
+const origin = Astro.site?.origin ?? Astro.url.origin;
+const canonicalUrl = new URL(Astro.url.pathname, origin).href;
+const ogImage = new URL(propOgImage || siteConfig.defaultImage, origin).href;
+
+// 3. 서버 측 기본 테마 및 메타 색상 결정
+const {
+    cookieKey,
+    storageKey,
+    defaultTheme,
+    attribute = "data-theme",
+    metaColor
+} = siteConfig.theme;
+
+const savedThemeCookie = Astro.cookies.get(cookieKey)?.value as
+    Theme | undefined;
+const initialTheme: Theme = propTheme || savedThemeCookie || defaultTheme;
+const currentMetaColor = metaColor[initialTheme] || metaColor[defaultTheme];
+
+// 4. 클라이언트 스크립트 전달용 테마 설정 데이터
+const themeConfigJson = JSON.stringify({
+    cookieKey,
+    storageKey,
+    defaultTheme,
+    attribute,
+    metaColor
+});
+---
+
+<!doctype html>
+<html lang="ko" data-theme={initialTheme}>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="generator" content={Astro.generator} />
+        <meta
+            name="theme-color"
+            content={currentMetaColor}
+            id="theme-color-meta"
+        />
+
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+
+        <!-- Pretendard Variable Dynamic Subset -->
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+        <link
+            rel="stylesheet"
+            crossorigin
+            href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css"
+        />
+
+        <!-- SEO 및 표준 Canonical URL -->
+        <link rel="canonical" href={canonicalUrl} />
+        <title>{pageTitle}</title>
+        <meta name="description" content={finalDescription} />
+        <meta name="author" content={siteConfig.author} />
+        {siteConfig.keywords.length > 0 && (
+            <meta name="keywords" content={siteConfig.keywords.join(", ")} />
+        )}
+        <meta name="robots" content="index, follow" />
+
+        <!-- 오픈 그래프 (OG) & 트위터 메타 태그 -->
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content={siteConfig.brand} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:title" content={ogTitle} />
+        <meta property="og:description" content={finalDescription} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:alt" content={pageTitle} />
+        <meta property="og:locale" content={siteConfig.social.locale} />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        {siteConfig.social.twitter && (
+            <meta name="twitter:site" content={siteConfig.social.twitter} />
+        )}
+        <meta name="twitter:title" content={ogTitle} />
+        <meta name="twitter:description" content={finalDescription} />
+        <meta name="twitter:image" content={ogImage} />
+
+        <!-- 클라이언트 테마 동기화 스크립트 (FOUC 방지 및 브라우저 헤더 동기화) -->
+        <script is:inline define:vars={{ themeConfigRaw: themeConfigJson }}>
+            (function () {
+                try {
+                    const {
+                        cookieKey,
+                        storageKey,
+                        defaultTheme,
+                        attribute,
+                        metaColor
+                    } = JSON.parse(themeConfigRaw);
+
+                    // 1. 쿠키 및 로컬스토리지에서 기존 테마 값 파싱
+                    const cookieMatch = document.cookie.match(
+                        new RegExp("(?:^|; )" + cookieKey + "=([^;]*)")
+                    );
+                    const cookieTheme = cookieMatch ? cookieMatch[1] : null;
+                    const storageTheme = localStorage.getItem(storageKey);
+
+                    // 2. 우선순위: 쿠키 > 로컬스토리지 > 기본값
+                    const currentTheme =
+                        cookieTheme || storageTheme || defaultTheme;
+
+                    // 3. HTML attribute 동기화 (깜빡임 차단)
+                    document.documentElement.setAttribute(
+                        attribute,
+                        currentTheme
+                    );
+
+                    // 4. 모바일 브라우저 상단바 색상 동기화
+                    const metaTag = document.getElementById("theme-color-meta");
+                    if (metaTag && metaColor && metaColor[currentTheme]) {
+                        metaTag.setAttribute(
+                            "content",
+                            metaColor[currentTheme]
+                        );
+                    }
+
+                    // 5. 로컬스토리지 동기화
+                    if (storageTheme !== currentTheme && cookieTheme) {
+                        localStorage.setItem(storageKey, currentTheme);
+                    }
+                } catch (e) {
+                    // 예외 처리
+                }
+            })();
+        </script>
+    </head>
+    <body>
+        <div class="view-page">
+            <slot />
+        </div>
+    </body>
+</html>
+
+<style>
+    body {
+        display: flex;
+        flex-direction: column;
+        min-height: 100dvh;
+    }
+
+    .view-page {
+        max-width: var(--main-width, 1200px);
+        margin: 0 auto;
+        padding: 0 1rem;
+        min-height: 100dvh;
+        width: 100%;
+    }
+
+    @media (min-width: 1200px) {
+        .view-page {
+            padding: 0;
+        }
+    }
+</style>

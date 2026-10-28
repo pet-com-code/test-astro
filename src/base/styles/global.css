@@ -1,0 +1,256 @@
+/* ==========================================================================
+    1. 외부 폰트 선언 (Fonts)
+    - 실제 폰트 파일은 Layout.astro / LayoutCenter.astro의 <link>에서 로드.
+    - 여기서는 @import를 사용하지 않음 (렌더 블로킹 및 중복 로딩 방지).
+    - font-family명: "Pretendard Variable" (variable-dynamic-subset.css 기준)
+========================================================================== */
+
+/* ==========================================================================
+    2. 테마 변수 (Theme Variables)
+========================================================================== */
+/*
+    | 변수                      | 의미             | 주 용도            |
+    | ------------------------- | ---------       | ---------------    |
+    | `--font-primary`          | 기본 글꼴        | 일반 텍스트        |
+    | `--font-title`            | 제목 글꼴        | h1~h6             |
+    | `--main-width`            | 콘텐츠 최대 너비 | 레이아웃            |
+    | `--color-primary`         | 메인 강조색      | 버튼, 강조          |
+    | `--color-primary-hover`   | 강조색 Hover     | 버튼 Hover         |
+    | `--color-primary-content` | 강조색 위 글자색 | 버튼 글자           |
+    | `--color-base-100`        | 기본 배경        | 페이지             |
+    | `--color-base-200`        | 보조 배경        | 카드               |
+    | `--color-base-input`      | 입력창 배경      | input, textarea    |
+    | `--color-base-content`    | 기본 글자색      | 본문               |
+    | `--color-border`          | 테두리색         | 카드, input        |
+    | `--custom-shadow`         | 기본 그림자      | 카드, 버튼          |
+    | `--custom-shadow-hover`   | Hover 그림자     | 카드, 버튼          |
+*/
+
+/* 기본 테마 (General) */
+:root,
+[data-theme="general"] {
+    --font-primary:
+        "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont,
+        system-ui, Roboto, "Apple SD Gothic Neo", sans-serif;
+    --font-title: var(--font-primary);
+    --main-width: 1200px;
+
+    /* Color Scheme */
+    --color-primary: #7f8c8d; /* 주요 강조 색상 */
+    --color-primary-hover: #616a6b; /* 마우스를 버튼 등에 올렸을 때 사용하는 강조 색상 */
+    --color-primary-content: #ffffff; /* Primary 색상 위에 표시되는 텍스트 색상 */
+    --color-base-100: #f8f9fa; /* 사이트의 가장 기본적인 배경색, 페이지 전체의 기본 배경색 */
+    --color-base-200: #e9ecef; /* 기본 배경보다 한 단계 구분되는 배경색, 카드에서 사용 */
+    --color-base-input: #ffffff; /* 입력창의 배경색 */
+    --color-base-content: #2c3e50; /* 일반적인 본문 텍스트 색상 */
+    --color-border: #ced4da; /* 테두리 색상 */
+
+    /* Shadow Effects 그림자 변수 */
+    --custom-shadow: 0 10px 25px -5px rgba(127, 140, 141, 0.12);
+    --custom-shadow-hover: 0 15px 30px -5px rgba(127, 140, 141, 0.22);
+}
+
+/* 강아지 테마 (Dog) - 쿨 블루 파스텔 스키마 */
+[data-theme="dog"] {
+    --color-primary: #4a90e2;
+    --color-primary-hover: #357abd;
+    --color-primary-content: #ffffff;
+    --color-base-100: #f0f6ff;
+    --color-base-200: #e1edff;
+    --color-base-input: #ffffff;
+    --color-base-content: #1e293b;
+    --color-border: #bae0ff;
+
+    --custom-shadow: 0 10px 25px -5px rgba(74, 144, 226, 0.15);
+    --custom-shadow-hover: 0 15px 30px -5px rgba(74, 144, 226, 0.25);
+}
+
+/* 고양이 테마 (Cat) - 핑크 파스텔 스키마 */
+[data-theme="cat"] {
+    --color-primary: #ffa6c9;
+    --color-primary-hover: #ec8fa7;
+    --color-primary-content: #ffffff;
+    --color-base-100: #fff0f5;
+    --color-base-200: #ffe4ed;
+    --color-base-input: #ffffff;
+    --color-base-content: #332222;
+    --color-border: #ffccd5;
+
+    --custom-shadow: 0 10px 25px -5px rgba(255, 166, 201, 0.18);
+    --custom-shadow-hover: 0 15px 30px -5px rgba(255, 166, 201, 0.28);
+}
+
+/* OS 기본 다크모드 대응 (명시적 테마 지정이 없을 때 Fallback) */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+        --color-primary: #95a5a6;
+        --color-primary-hover: #7f8c8d;
+        --color-primary-content: #0f172a;
+        --color-base-100: #0f172a;
+        --color-base-200: #1e293b;
+        --color-base-input: #1e293b;
+        --color-base-content: #f8fafc;
+        --color-border: #334155;
+
+        --custom-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        --custom-shadow-hover: 0 15px 30px -5px rgba(0, 0, 0, 0.5);
+    }
+}
+
+/* ==========================================================================
+    3. CSS 리셋 및 기본 스타일 (Reset & Base)
+========================================================================== */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    font-family: var(--font-primary);
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+body {
+    min-height: 100vh;
+    background-color: var(--color-base-100);
+    color: var(--color-base-content);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-title);
+    line-height: 1.4;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+ul,
+ol {
+    list-style: none;
+}
+
+img,
+video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 0;
+}
+
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+input,
+button,
+textarea,
+select {
+    font: inherit;
+    color: inherit;
+}
+
+button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+input,
+textarea {
+    background-color: var(--color-base-input);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    transition:
+        border-color 0.2s ease,
+        background-color 0.3s ease;
+}
+
+textarea {
+    resize: vertical;
+}
+
+/* ==========================================================================
+    4. 공통 유틸리티 클래스 (Utilities & Components)
+========================================================================== */
+/* 레이아웃 컨테이너 */
+.container-main {
+    width: 100%;
+    max-width: var(--main-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+/* 접근성(a11y) - 스크린리더 전용 */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.btn-theme {
+    background-color: var(--color-primary);
+    color: var(--color-primary-content);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--custom-shadow);
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease,
+        box-shadow 0.2s ease;
+}
+
+.btn-theme:hover {
+    background-color: var(--color-primary-hover);
+    box-shadow: var(--custom-shadow-hover);
+}
+
+.btn-theme:active {
+    transform: translateY(1px);
+}
+
+.shadow-card {
+    background-color: var(--color-base-200);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    box-shadow: var(--custom-shadow);
+    transition:
+        background-color 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.shadow-card:hover {
+    box-shadow: var(--custom-shadow-hover);
+    transform: translateY(-2px);
+}

@@ -1,0 +1,163 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { siteConfig, type Theme } from "@/base/site";
+
+// 1. 등록된 테마 목록 및 설정 추출
+const {
+    themes,
+    cookieKey,
+    storageKey,
+    attribute = "data-theme",
+    metaColor
+} = siteConfig.theme;
+
+// 2. 테마 라벨 매핑 (UI 표시용)
+const themeLabels: Record<Theme, string> = {
+    general: "기본",
+    dog: "🐶 강아지",
+    cat: "🐱 고양이"
+};
+
+// 3. Client Inline Script 데이터 전송용
+const clientThemeConfig = JSON.stringify({
+    cookieKey,
+    storageKey,
+    attribute,
+    metaColor
+});
+---
+
+<Layout title="테마 테스트" description="테마 변경 기능 체크 페이지">
+    <div class="test-container">
+        <!-- 테마 변경 버튼 영역 (siteConfig 기반 동적 생성) -->
+        <div id="theme-btn-container" class="button-group">
+            {themes.map((themeId) => (
+                <button
+                    type="button"
+                    class="btn-theme"
+                    data-theme-id={themeId}
+                    onclick={`changeTheme('${themeId}')`}
+                >
+                    {themeLabels[themeId] || themeId}
+                </button>
+            ))}
+        </div>
+
+        <!-- 카드 예시 (.shadow-card 유틸리티 스타일 확장 적용) -->
+        <div class="shadow-card demo-card">
+            <h2>테마 적용 카드리스트</h2>
+            <p>현재 테마 변수가 자동으로 변경됩니다.</p>
+        </div>
+    </div>
+</Layout>
+
+<style>
+    /* 전체 컨테이너 패딩 */
+    .test-container {
+        padding: 1rem 0;
+    }
+
+    /* 버튼 배치 레이아웃 */
+    .button-group {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* 🎨 활성화 상태(Active UI) 전역 변수 기준 매핑 */
+    .btn-theme {
+        padding: 0.6rem 1.2rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--color-border, #ccc);
+        background-color: var(--color-base-input, #fff);
+        color: var(--color-base-content, #333);
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .btn-theme[data-active="true"] {
+        background-color: var(--color-primary-hover, #333);
+        color: #fff;
+        box-shadow: var(--custom-shadow-hover, 0 4px 6px rgba(0, 0, 0, 0.1));
+        transform: scale(1.02);
+        outline: 2px solid var(--color-primary, #000);
+        outline-offset: 2px;
+    }
+
+    /* 🎨 카드 컴포넌트 여백 및 내부 텍스트 컬러 토큰 바인딩 */
+    .demo-card {
+        padding: 2.5rem;
+    }
+
+    .demo-card p {
+        margin-top: 0.5rem;
+        opacity: 0.85;
+    }
+</style>
+
+<!-- 전역 window 객체에 테마 변경 및 동기화 함수 바인딩 -->
+<script is:inline define:vars={{ clientThemeConfigRaw: clientThemeConfig }}>
+    (function () {
+        const { cookieKey, storageKey, attribute, metaColor } =
+            JSON.parse(clientThemeConfigRaw);
+
+        // 현재 활성화된 버튼의 스타일 동기화
+        function updateActiveButton(themeName) {
+            const buttons = document.querySelectorAll(
+                "#theme-btn-container .btn-theme"
+            );
+            buttons.forEach((btn) => {
+                if (btn.getAttribute("data-theme-id") === themeName) {
+                    btn.setAttribute("data-active", "true");
+                } else {
+                    btn.removeAttribute("data-active");
+                }
+            });
+        }
+
+        // onclick 속성 및 외부에서 접근 가능하도록 window 객체에 바인딩
+        window.changeTheme = function (themeName) {
+            console.log("👉 [Theme Check] 클릭된 테마:", themeName);
+
+            try {
+                // 1. HTML DOM attribute 변경
+                document.documentElement.setAttribute(attribute, themeName);
+
+                // 2. 모바일 브라우저 상단바 색상 (theme-color) 동기화
+                const metaTag = document.getElementById("theme-color-meta");
+                if (metaTag && metaColor && metaColor[themeName]) {
+                    metaTag.setAttribute("content", metaColor[themeName]);
+                }
+
+                // 3. LocalStorage 및 Cookie 동기화 저장
+                localStorage.setItem(storageKey, themeName);
+                document.cookie = `${cookieKey}=${themeName}; path=/; max-age=31536000; SameSite=Lax`;
+
+                // 4. 버튼 UI 상태 갱신
+                updateActiveButton(themeName);
+
+                console.log(
+                    "💾 [Theme Check] 저장 및 UI 동기화 성공:",
+                    themeName
+                );
+            } catch (error) {
+                console.error(
+                    "❌ [Theme Check] 테마 변경 중 에러 발생:",
+                    error
+                );
+            }
+        };
+
+        // [최초 로드 시점] DOM 콘텐츠가 준비되면 현재 선택된 테마 버튼 활성화
+        document.addEventListener("DOMContentLoaded", () => {
+            try {
+                const currentTheme =
+                    document.documentElement.getAttribute(attribute) ||
+                    "general";
+                updateActiveButton(currentTheme);
+            } catch (e) {
+                // 예외 처리
+            }
+        });
+    })();
+</script>

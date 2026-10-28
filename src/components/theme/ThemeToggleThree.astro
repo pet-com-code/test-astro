@@ -1,0 +1,303 @@
+---
+import { siteConfig } from "@/config/site";
+
+const themeConfig = siteConfig.theme;
+---
+
+<!-- 
+    [아키텍처 가이드 반영] 
+    SSR 환경에서 깜빡임(FOUC)을 방지하기 위해 HTML 렌더링 직전에 
+    쿠키나 localStorage를 읽어 data-theme 속성을 미리 주입합니다.
+-->
+<script
+    is:inline
+    define:vars={{
+        COOKIE_KEY: themeConfig.cookieKey,
+        STORAGE_KEY: themeConfig.storageKey,
+        DEFAULT_THEME: themeConfig.defaultTheme,
+        ATTRIBUTE: themeConfig.attribute ?? "data-theme",
+        VALID_THEMES: themeConfig.themes
+    }}
+>
+    (function () {
+        try {
+            const cookies = document.cookie.split(";");
+            let theme = null;
+            for (let cookie of cookies) {
+                const [key, value] = cookie.trim().split("=");
+                if (key === decodeURIComponent(COOKIE_KEY)) {
+                    theme = decodeURIComponent(value);
+                    break;
+                }
+            }
+            if (!VALID_THEMES.includes(theme)) {
+                theme = localStorage.getItem(STORAGE_KEY);
+            }
+            if (!VALID_THEMES.includes(theme)) {
+                theme = VALID_THEMES.includes(DEFAULT_THEME)
+                    ? DEFAULT_THEME
+                    : VALID_THEMES[0];
+            }
+            document.documentElement.setAttribute(ATTRIBUTE, theme);
+        } catch (e) {
+            document.documentElement.setAttribute(ATTRIBUTE, DEFAULT_THEME);
+        }
+    })();
+</script>
+
+<div class="theme-toggle-container" role="group" aria-label="테마 선택">
+    <!-- 일반(General) 테마 버튼 (가운데 배치) -->
+    <button
+        type="button"
+        class="toggle-btn"
+        data-theme-toggle
+        data-theme-value="general"
+        aria-pressed="false"
+        aria-label="기본 테마"
+        title="기본 테마"
+    >
+        <span class="emoji" aria-hidden="true">
+            ⚙️
+        </span>
+    </button>
+
+    <!-- 강아지(Dog) 테마 버튼 -->
+    <button
+        type="button"
+        class="toggle-btn"
+        data-theme-toggle
+        data-theme-value="dog"
+        aria-pressed="false"
+        aria-label="강아지 테마"
+        title="강아지 테마"
+    >
+        <span class="emoji" aria-hidden="true">
+            🐶
+        </span>
+    </button>
+
+    <!-- 고양이(Cat) 테마 버튼 -->
+    <button
+        type="button"
+        class="toggle-btn"
+        data-theme-toggle
+        data-theme-value="cat"
+        aria-pressed="false"
+        aria-label="고양이 테마"
+        title="고양이 테마"
+    >
+        <span class="emoji" aria-hidden="true">
+            🐱
+        </span>
+    </button>
+</div>
+
+<script
+    is:inline
+    define:vars={{
+        COOKIE_KEY: themeConfig.cookieKey,
+        STORAGE_KEY: themeConfig.storageKey,
+        DEFAULT_THEME: themeConfig.defaultTheme,
+        ATTRIBUTE: themeConfig.attribute ?? "data-theme",
+        VALID_THEMES: themeConfig.themes
+    }}
+>
+    (() => {
+        const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+        function isValidTheme(theme) {
+            return VALID_THEMES.includes(theme);
+        }
+
+        function readStoredTheme() {
+            try {
+                const theme = localStorage.getItem(STORAGE_KEY);
+                return isValidTheme(theme) ? theme : null;
+            } catch {
+                return null;
+            }
+        }
+
+        function getActiveTheme() {
+            const appliedTheme =
+                document.documentElement.getAttribute(ATTRIBUTE);
+
+            if (isValidTheme(appliedTheme)) {
+                return appliedTheme;
+            }
+
+            const storedTheme = readStoredTheme();
+
+            if (storedTheme) {
+                return storedTheme;
+            }
+
+            return isValidTheme(DEFAULT_THEME)
+                ? DEFAULT_THEME
+                : VALID_THEMES[0];
+        }
+
+        function applyTheme(theme, persist = true) {
+            if (!isValidTheme(theme)) return;
+
+            document.documentElement.setAttribute(ATTRIBUTE, theme);
+
+            if (persist) {
+                try {
+                    localStorage.setItem(STORAGE_KEY, theme);
+                } catch (error) {
+                    console.warn(
+                        "테마 설정을 브라우저 저장소에 저장하지 못했습니다."
+                    );
+                }
+
+                try {
+                    const secure =
+                        window.location.protocol === "https:" ? "; Secure" : "";
+
+                    document.cookie =
+                        `${encodeURIComponent(COOKIE_KEY)}=` +
+                        `${encodeURIComponent(theme)}; ` +
+                        `Path=/; Max-Age=${COOKIE_MAX_AGE}; ` +
+                        `SameSite=Lax${secure}`;
+                } catch {
+                    // 쿠키 저장 실패 시 무시
+                }
+            }
+
+            updateToggleButtons(theme);
+        }
+
+        function updateToggleButtons(theme) {
+            document
+                .querySelectorAll("[data-theme-toggle]")
+                .forEach((button) => {
+                    const isActive =
+                        button.getAttribute("data-theme-value") === theme;
+
+                    button.classList.toggle("active", isActive);
+                    button.setAttribute("aria-pressed", String(isActive));
+                });
+        }
+
+        function setupThemeToggle() {
+            const buttons = document.querySelectorAll("[data-theme-toggle]");
+
+            if (buttons.length === 0) return;
+
+            buttons.forEach((button) => {
+                if (button.dataset.themeToggleBound === "true") return;
+
+                button.dataset.themeToggleBound = "true";
+
+                button.addEventListener("click", () => {
+                    const targetTheme = button.getAttribute("data-theme-value");
+                    applyTheme(targetTheme);
+                });
+            });
+
+            updateToggleButtons(getActiveTheme());
+        }
+
+        if (!window.__PETJUP_THEME_TOGGLE_INIT__) {
+            window.__PETJUP_THEME_TOGGLE_INIT__ = true;
+            document.addEventListener("astro:page-load", setupThemeToggle);
+        }
+
+        setupThemeToggle();
+    })();
+</script>
+
+<style>
+    .theme-toggle-container {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        width: fit-content;
+        padding: 0.25rem;
+
+        border: 1px solid var(--theme-toggle-border, rgba(255, 255, 255, 0.4));
+        border-radius: 9999px;
+        background-color: var(--color-base-200, #f1f1f1);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+        backdrop-filter: blur(12px);
+
+        transition: background-color 250ms ease;
+    }
+
+    .toggle-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+
+        width: 2.375rem;
+        height: 2.375rem;
+        padding: 0;
+
+        border: 0;
+        border-radius: 9999px;
+        background-color: transparent;
+        color: inherit;
+
+        cursor: pointer;
+        transition:
+            background-color 250ms ease,
+            box-shadow 250ms ease,
+            transform 250ms ease;
+    }
+
+    .toggle-btn:hover {
+        background-color: var(--theme-toggle-hover, rgb(128 128 128 / 12%));
+    }
+
+    .toggle-btn:active {
+        transform: scale(0.96);
+    }
+
+    .toggle-btn:focus-visible {
+        outline: 2px solid var(--color-primary, #64748b);
+        outline-offset: 3px;
+    }
+
+    .emoji {
+        display: inline-block;
+        font-size: 1.125rem;
+        line-height: 1;
+        opacity: 0.55;
+        filter: grayscale(40%);
+        transition:
+            filter 250ms ease,
+            opacity 250ms ease;
+    }
+
+    .toggle-btn.active {
+        background-color: var(--theme-bg, var(--color-base-100, #fff));
+        box-shadow:
+            0 4px 6px -1px rgb(0 0 0 / 10%),
+            0 2px 4px -1px rgb(0 0 0 / 6%);
+        transform: scale(1.05);
+    }
+
+    .toggle-btn.active .emoji {
+        opacity: 1;
+        filter: grayscale(0%);
+    }
+
+    @media (min-width: 768px) {
+        .toggle-btn {
+            width: 2.25rem;
+            height: 2.25rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .theme-toggle-container,
+        .toggle-btn,
+        .emoji {
+            transition: none;
+        }
+    }
+</style>
